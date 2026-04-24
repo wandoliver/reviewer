@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { review } from "./reviewer.js";
 import { env } from "./config.js";
-import { validateReviewRequest } from "./validation.js";
+import { validateDiffReviewRequest, validateFileReviewRequest, validateReviewRequest } from "./validation.js";
 import { RequestValidationError, UpstreamApiError } from "./errors.js";
 import { logEvent } from "./logging.js";
 import type { ReviewRequest, ReviewResponse } from "./types.js";
@@ -75,10 +75,15 @@ export async function handleRequest(request: RequestLike, deps: AppDependencies 
     return { statusCode: 401, body: { error: "Unauthorized" } };
   }
 
-  if (method === "POST" && url === "/review") {
+  if (method === "POST" && (url === "/review" || url === "/review/file" || url === "/review/diff")) {
     try {
       const body = request.body ? JSON.parse(request.body) : {};
-      const parsed = validateReviewRequest(body);
+      const parsed =
+        url === "/review/file"
+          ? validateFileReviewRequest(body)
+          : url === "/review/diff"
+            ? validateDiffReviewRequest(body)
+            : validateReviewRequest(body);
       mode = parsed.mode;
       const result = await reviewFn(parsed);
       logEvent({

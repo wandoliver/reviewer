@@ -148,3 +148,88 @@ test("review endpoint maps request validation errors thrown by reviewer to 400",
 
   assert.equal(response.statusCode, 400);
 });
+
+test("file review endpoint maps dedicated request shape to a file review", async () => {
+  let received: ReviewRequest | undefined;
+
+  const response = await handleRequest({
+    method: "POST",
+    url: "/review/file",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      path: "src/app.ts",
+      content: "export const x = 1;"
+    })
+  }, {
+    reviewerApiToken: undefined,
+    reviewFn: async (request) => {
+      received = request;
+      return okResponse();
+    }
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(received?.mode, "code_review");
+  assert.equal(received?.files?.[0]?.path, "src/app.ts");
+});
+
+test("diff review endpoint maps dedicated request shape to a diff review", async () => {
+  let received: ReviewRequest | undefined;
+
+  const response = await handleRequest({
+    method: "POST",
+    url: "/review/diff",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      diff: "diff --git a/a.ts b/a.ts"
+    })
+  }, {
+    reviewerApiToken: undefined,
+    reviewFn: async (request) => {
+      received = request;
+      return okResponse();
+    }
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(received?.mode, "code_review");
+  assert.equal(received?.diff, "diff --git a/a.ts b/a.ts");
+});
+
+test("file review endpoint validates required path and content", async () => {
+  const response = await handleRequest({
+    method: "POST",
+    url: "/review/file",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      path: "src/app.ts"
+    })
+  }, {
+    reviewerApiToken: undefined,
+    reviewFn: async () => okResponse()
+  });
+
+  assert.equal(response.statusCode, 400);
+});
+
+test("diff review endpoint validates required diff", async () => {
+  const response = await handleRequest({
+    method: "POST",
+    url: "/review/diff",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({})
+  }, {
+    reviewerApiToken: undefined,
+    reviewFn: async () => okResponse()
+  });
+
+  assert.equal(response.statusCode, 400);
+});

@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { RequestValidationError } from "../src/errors.js";
 import {
   reviewResponseJsonSchema,
+  validateDiffReviewRequest,
+  validateFileReviewRequest,
   validateReviewRequest,
   validateReviewResponse
 } from "../src/validation.js";
@@ -33,6 +35,25 @@ test("validateReviewRequest accepts reviewer modes", () => {
   });
 
   assert.equal(result.mode, "strict_review");
+});
+
+test("validateFileReviewRequest defaults to code_review mode", () => {
+  const result = validateFileReviewRequest({
+    path: "src/app.ts",
+    content: "export const x = 1;"
+  });
+
+  assert.equal(result.mode, "code_review");
+  assert.equal(result.files?.[0]?.path, "src/app.ts");
+});
+
+test("validateDiffReviewRequest defaults to code_review mode", () => {
+  const result = validateDiffReviewRequest({
+    diff: "diff --git a/a.ts b/a.ts"
+  });
+
+  assert.equal(result.mode, "code_review");
+  assert.equal(result.title, "diff review");
 });
 
 test("validateReviewResponse accepts valid structured review", () => {

@@ -1,5 +1,6 @@
 # Reviewer
 
+[![Release](https://img.shields.io/badge/release-v0.1.0-blue.svg)](https://github.com/wandoliver/reviewer/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/wandoliver/reviewer/blob/main/LICENSE)
 
 Standalone review agent backed by the OpenAI API.
@@ -19,7 +20,6 @@ Current scope:
 Not implemented yet:
 
 - streaming responses
-- dedicated `/review/file` and `/review/diff` endpoints
 - multi-user auth/tenant model
 - Docker packaging
 
@@ -53,6 +53,12 @@ This service exposes a local HTTP endpoint that accepts review requests and retu
 - code/diff reviews
 - file reviews
 - machine-to-machine use from other local tools or CI glue
+
+HTTP surfaces:
+
+- `POST /review` for the full generic request shape
+- `POST /review/file` for direct single-file review payloads
+- `POST /review/diff` for direct diff review payloads
 
 ## Stack
 
@@ -122,6 +128,22 @@ Default server:
 
 - `GET /health`
 - `POST /review`
+- `POST /review/file`
+- `POST /review/diff`
+
+Endpoint intent:
+
+- `/review`
+  - generic entry point
+  - accepts `mode`, `content`, `diff`, `files`, and optional `context`
+- `/review/file`
+  - convenience wrapper for file review
+  - accepts `path`, `content`, optional `title`, optional `context`, optional `mode`
+  - defaults to `code_review`
+- `/review/diff`
+  - convenience wrapper for diff review
+  - accepts `diff`, optional `title`, optional `context`, optional `mode`
+  - defaults to `code_review`
 
 ## Example request
 
@@ -136,6 +158,29 @@ Token auth also works with:
 
 ```bash
 -H "X-API-Token: change_me"
+```
+
+Dedicated file-review request:
+
+```bash
+curl -X POST http://localhost:3333/review/file \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer change_me" \
+  -d '{
+    "path": "src/app.ts",
+    "content": "export function activate() { client.status = \"active\"; }"
+  }'
+```
+
+Dedicated diff-review request:
+
+```bash
+curl -X POST http://localhost:3333/review/diff \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer change_me" \
+  -d '{
+    "diff": "diff --git a/src/app.ts b/src/app.ts"
+  }'
 ```
 
 ## Example response
@@ -158,8 +203,8 @@ Token auth also works with:
 
 See also:
 
-- [examples/plan-review-request.json](/Users/oliverwand/Develop/tk/reviewer/examples/plan-review-request.json)
-- [examples/code-review-request.json](/Users/oliverwand/Develop/tk/reviewer/examples/code-review-request.json)
+- [examples/plan-review-request.json](examples/plan-review-request.json)
+- [examples/code-review-request.json](examples/code-review-request.json)
 
 ## CLI
 
@@ -211,11 +256,10 @@ CI runs the same three commands on GitHub Actions.
 
 ## Changelog
 
-See [CHANGELOG.md](/Users/oliverwand/Develop/tk/reviewer/CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- add convenience HTTP endpoints for file and diff review
 - enrich response metadata with timing/model usage
 - improve prompt evaluation with more fixtures
 - optional markdown rendering mode

@@ -43,24 +43,65 @@ function validateFiles(value: unknown): ReviewFileInput[] {
   });
 }
 
+function validateMode(value: unknown, fallback: ReviewMode): ReviewMode {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  if (!isString(value) || !REVIEW_MODES.has(value as ReviewMode)) {
+    throw new RequestValidationError("mode must be one of: plan, diff, file, text, plan_review, code_review, strict_review");
+  }
+
+  return value as ReviewMode;
+}
+
+function validateOptionalTitle(value: unknown): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!isString(value) || value.length === 0 || value.length > 300) {
+    throw new RequestValidationError("title must be a non-empty string up to 300 characters");
+  }
+
+  return value;
+}
+
+function validateOptionalContext(value: unknown): ReviewRequest["context"] {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!isObject(value)) {
+    throw new RequestValidationError("context must be an object");
+  }
+
+  const context: NonNullable<ReviewRequest["context"]> = {};
+  for (const key of ["repo", "review_style", "branch", "commit", "extra_instructions"] as const) {
+    const item = value[key];
+    if (item !== undefined) {
+      if (!isString(item)) {
+        throw new RequestValidationError(`context.${key} must be a string`);
+      }
+      context[key] = item;
+    }
+  }
+
+  return context;
+}
+
 export function validateReviewRequest(value: unknown): ReviewRequest {
   if (!isObject(value)) {
     throw new RequestValidationError("request body must be a JSON object");
   }
 
-  if (!isString(value.mode) || !REVIEW_MODES.has(value.mode as ReviewMode)) {
-    throw new RequestValidationError("mode must be one of: plan, diff, file, text, plan_review, code_review, strict_review");
-  }
-
   const request: ReviewRequest = {
-    mode: value.mode as ReviewMode
+    mode: validateMode(value.mode, "text")
   };
 
-  if (value.title !== undefined) {
-    if (!isString(value.title) || value.title.length === 0 || value.title.length > 300) {
-      throw new RequestValidationError("title must be a non-empty string up to 300 characters");
-    }
-    request.title = value.title;
+  const title = validateOptionalTitle(value.title);
+  if (title !== undefined) {
+    request.title = title;
   }
 
   if (value.content !== undefined) {
@@ -81,21 +122,9 @@ export function validateReviewRequest(value: unknown): ReviewRequest {
     request.files = validateFiles(value.files);
   }
 
-  if (value.context !== undefined) {
-    if (!isObject(value.context)) {
-      throw new RequestValidationError("context must be an object");
-    }
-
-    request.context = {};
-    for (const key of ["repo", "review_style", "branch", "commit", "extra_instructions"] as const) {
-      const item = value.context[key];
-      if (item !== undefined) {
-        if (!isString(item)) {
-          throw new RequestValidationError(`context.${key} must be a string`);
-        }
-        request.context[key] = item;
-      }
-    }
+  const context = validateOptionalContext(value.context);
+  if (context !== undefined) {
+    request.context = context;
   }
 
   if (!request.content && !request.diff && (!request.files || request.files.length === 0)) {
@@ -103,6 +132,55 @@ export function validateReviewRequest(value: unknown): ReviewRequest {
   }
 
   return request;
+}
+
+export function validateFileReviewRequest(value: unknown): ReviewRequest {
+  if (!isObject(value)) {
+    throw new RequestValidationError("request body must be a JSON object");
+  }
+
+  if (!isString(value.path) || value.path.length === 0) {
+    throw new RequestValidationError("path must be a non-empty string");
+  }
+
+  if (!isString(value.content) || value.content.length === 0) {
+    throw new RequestValidationError("content must be a non-empty string");
+  }
+
+  const title = validateOptionalTitle(value.title);
+  const context = validateOptionalContext(value.context);
+
+  return {
+    mode: validateMode(value.mode, "code_review"),
+    title: title ?? value.path,
+    files: [
+      {
+        path: value.path,
+        content: value.content
+      }
+    ],
+    context
+  };
+}
+
+export function validateDiffReviewRequest(value: unknown): ReviewRequest {
+  if (!isObject(value)) {
+    throw new RequestValidationError("request body must be a JSON object");
+  }
+
+  if (!isString(value.diff) || value.diff.length === 0) {
+    throw new RequestValidationError("diff must be a non-empty string");
+  }
+
+  const title = validateOptionalTitle(value.title);
+  const context = validateOptionalContext(value.context);
+
+  return {
+    mode: validateMode(value.mode, "code_review"),
+    title: title ?? "diff review",
+    diff: value.diff,
+    context
+  };
 }
 
 function validateFinding(value: unknown, index: number): ReviewFinding {
