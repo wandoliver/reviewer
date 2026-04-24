@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/wandoliver/reviewer/blob/main/LICENSE)
 
-Standalone TypeScript review agent backed by the OpenAI API.
+Standalone review agent backed by the OpenAI API.
 
 ## Status
 
