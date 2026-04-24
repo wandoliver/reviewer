@@ -1,6 +1,49 @@
 # Reviewer
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/wandoliver/reviewer/blob/main/LICENSE)
+
 Standalone TypeScript review agent backed by the OpenAI API.
+
+## Status
+
+Usable early version.
+
+Current scope:
+
+- local HTTP review endpoint
+- CLI for file and git-diff review
+- structured JSON review output
+- lightweight tests
+- prompt-evaluation fixtures
+
+Not implemented yet:
+
+- streaming responses
+- dedicated `/review/file` and `/review/diff` endpoints
+- multi-user auth/tenant model
+- Docker packaging
+
+## Why this exists
+
+Reviewer is a small local service for turning the OpenAI API into a repeatable review endpoint.
+
+It is meant for cases where ChatGPT itself is not enough because you want:
+
+- a stable HTTP endpoint
+- a fixed reviewer persona
+- structured JSON output
+- CLI access for files, staged changes, and diffs
+- a tool that other local systems or colleagues can call
+
+## Important billing note
+
+This uses the OpenAI API, not ChatGPT billing.
+
+That means:
+
+- you need an `OPENAI_API_KEY`
+- your API project needs its own budget/quota
+- a paid ChatGPT subscription by itself is not enough for this tool
 
 ## What it does
 
@@ -30,6 +73,35 @@ This service exposes a local HTTP endpoint that accepts review requests and retu
 npm install
 ```
 
+Minimal `.env`:
+
+```bash
+OPENAI_API_KEY=your_api_key
+OPENAI_MODEL=gpt-5
+PORT=3333
+REVIEWER_API_TOKEN=change_me
+```
+
+## Quick start
+
+```bash
+npm install
+npm run build
+npm start
+```
+
+Then in a second terminal:
+
+```bash
+curl http://localhost:3333/health
+```
+
+Expected response:
+
+```json
+{"ok":true}
+```
+
 ## Run
 
 Production build:
@@ -57,11 +129,7 @@ Default server:
 curl -X POST http://localhost:3333/review \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer change_me" \
-  -d '{
-    "mode": "plan",
-    "title": "Review this plan",
-    "content": "Context\n\nWe will add a new helper..."
-  }'
+  -d @examples/plan-review-request.json
 ```
 
 Token auth also works with:
@@ -87,6 +155,11 @@ Token auth also works with:
   "change_summary": "The plan is close but still misses one branch."
 }
 ```
+
+See also:
+
+- [examples/plan-review-request.json](/Users/oliverwand/Develop/tk/reviewer/examples/plan-review-request.json)
+- [examples/code-review-request.json](/Users/oliverwand/Develop/tk/reviewer/examples/code-review-request.json)
 
 ## CLI
 
@@ -123,6 +196,30 @@ npm run eval
 ```
 
 This runs a small set of stored review requests through the live reviewer and prints lightweight pass/fail checks so prompt tuning is less guessy.
+
+## Development
+
+Checks:
+
+```bash
+npm run check
+npm run build
+npm test
+```
+
+CI runs the same three commands on GitHub Actions.
+
+## Changelog
+
+See [CHANGELOG.md](/Users/oliverwand/Develop/tk/reviewer/CHANGELOG.md).
+
+## Roadmap
+
+- add convenience HTTP endpoints for file and diff review
+- enrich response metadata with timing/model usage
+- improve prompt evaluation with more fixtures
+- optional markdown rendering mode
+- optional Docker packaging
 
 ## Notes
 

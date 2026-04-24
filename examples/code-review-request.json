@@ -1,0 +1,10 @@
+{
+  "mode": "code_review",
+  "title": "Review this file",
+  "files": [
+    {
+      "path": "src/app.ts",
+      "content": "export function activate() { client.status = 'active'; }"
+    }
+  ]
+}

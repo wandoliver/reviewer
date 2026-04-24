@@ -1,0 +1,5 @@
+{
+  "mode": "plan_review",
+  "title": "Review this plan",
+  "content": "Context\n\nAdd a shared helper, update only one activation path, and skip tests because the change is small."
+}
