@@ -1,0 +1,23 @@
+{
+  "name": "reviewer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone TypeScript review agent backed by the OpenAI API.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "node --test dist/test/**/*.test.js",
+    "eval": "node --env-file=.env dist/src/eval/run-fixtures.js",
+    "start": "node --env-file=.env dist/src/server.js",
+    "cli": "node --env-file=.env dist/src/cli.js",
+    "smoke": "node --env-file=.env dist/src/smoke.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2"
+  }
+}

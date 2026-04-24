@@ -1,0 +1,188 @@
+import type {
+  ReviewFileInput,
+  ReviewFinding,
+  ReviewMode,
+  ReviewRequest,
+  ReviewResponse,
+  ReviewSeverity
+} from "./types.js";
+import { RequestValidationError } from "./errors.js";
+
+const REVIEW_MODES = new Set<ReviewMode>(["plan", "diff", "file", "text", "plan_review", "code_review", "strict_review"]);
+const SEVERITIES = new Set<ReviewSeverity>(["critical", "high", "medium", "low"]);
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === "string";
+}
+
+function ensureStringArray(value: unknown, field: string): string[] {
+  if (!Array.isArray(value) || !value.every(isString)) {
+    throw new RequestValidationError(`${field} must be an array of strings`);
+  }
+  return value;
+}
+
+function validateFiles(value: unknown): ReviewFileInput[] {
+  if (!Array.isArray(value)) {
+    throw new RequestValidationError("files must be an array");
+  }
+
+  return value.map((item, index) => {
+    if (!isObject(item) || !isString(item.path) || !item.path || !isString(item.content) || !item.content) {
+      throw new RequestValidationError(`files[${index}] must contain non-empty path and content`);
+    }
+
+    return {
+      path: item.path,
+      content: item.content
+    };
+  });
+}
+
+export function validateReviewRequest(value: unknown): ReviewRequest {
+  if (!isObject(value)) {
+    throw new RequestValidationError("request body must be a JSON object");
+  }
+
+  if (!isString(value.mode) || !REVIEW_MODES.has(value.mode as ReviewMode)) {
+    throw new RequestValidationError("mode must be one of: plan, diff, file, text, plan_review, code_review, strict_review");
+  }
+
+  const request: ReviewRequest = {
+    mode: value.mode as ReviewMode
+  };
+
+  if (value.title !== undefined) {
+    if (!isString(value.title) || value.title.length === 0 || value.title.length > 300) {
+      throw new RequestValidationError("title must be a non-empty string up to 300 characters");
+    }
+    request.title = value.title;
+  }
+
+  if (value.content !== undefined) {
+    if (!isString(value.content) || value.content.length === 0) {
+      throw new RequestValidationError("content must be a non-empty string");
+    }
+    request.content = value.content;
+  }
+
+  if (value.diff !== undefined) {
+    if (!isString(value.diff) || value.diff.length === 0) {
+      throw new RequestValidationError("diff must be a non-empty string");
+    }
+    request.diff = value.diff;
+  }
+
+  if (value.files !== undefined) {
+    request.files = validateFiles(value.files);
+  }
+
+  if (value.context !== undefined) {
+    if (!isObject(value.context)) {
+      throw new RequestValidationError("context must be an object");
+    }
+
+    request.context = {};
+    for (const key of ["repo", "review_style", "branch", "commit", "extra_instructions"] as const) {
+      const item = value.context[key];
+      if (item !== undefined) {
+        if (!isString(item)) {
+          throw new RequestValidationError(`context.${key} must be a string`);
+        }
+        request.context[key] = item;
+      }
+    }
+  }
+
+  if (!request.content && !request.diff && (!request.files || request.files.length === 0)) {
+    throw new RequestValidationError("At least one of content, diff, or files must be provided.");
+  }
+
+  return request;
+}
+
+function validateFinding(value: unknown, index: number): ReviewFinding {
+  if (!isObject(value)) {
+    throw new Error(`findings[${index}] must be an object`);
+  }
+  if (!isString(value.severity) || !SEVERITIES.has(value.severity as ReviewSeverity)) {
+    throw new Error(`findings[${index}].severity is invalid`);
+  }
+  if (!isString(value.title) || value.title.length === 0) {
+    throw new Error(`findings[${index}].title must be a non-empty string`);
+  }
+  if (!isString(value.body) || value.body.length === 0) {
+    throw new Error(`findings[${index}].body must be a non-empty string`);
+  }
+
+  const references = value.references === undefined ? [] : ensureStringArray(value.references, `findings[${index}].references`);
+
+  return {
+    severity: value.severity as ReviewSeverity,
+    title: value.title,
+    body: value.body,
+    references
+  };
+}
+
+export function validateReviewResponse(value: unknown): ReviewResponse {
+  if (!isObject(value)) {
+    throw new Error("review response must be an object");
+  }
+  if (!isString(value.summary) || value.summary.length === 0) {
+    throw new Error("summary must be a non-empty string");
+  }
+  if (!Array.isArray(value.findings)) {
+    throw new Error("findings must be an array");
+  }
+  if (!isString(value.change_summary) || value.change_summary.length === 0) {
+    throw new Error("change_summary must be a non-empty string");
+  }
+
+  const openQuestions = value.open_questions === undefined ? [] : ensureStringArray(value.open_questions, "open_questions");
+
+  return {
+    summary: value.summary,
+    findings: value.findings.map(validateFinding),
+    open_questions: openQuestions,
+    change_summary: value.change_summary
+  };
+}
+
+export const reviewResponseJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["summary", "findings", "open_questions", "change_summary"],
+  properties: {
+    summary: { type: "string" },
+    findings: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["severity", "title", "body", "references"],
+        properties: {
+          severity: {
+            type: "string",
+            enum: ["critical", "high", "medium", "low"]
+          },
+          title: { type: "string" },
+          body: { type: "string" },
+          references: {
+            type: "array",
+            items: { type: "string" }
+          }
+        }
+      }
+    },
+    open_questions: {
+      type: "array",
+      items: { type: "string" }
+    },
+    change_summary: { type: "string" }
+  }
+} as const;
