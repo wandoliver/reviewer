@@ -222,12 +222,55 @@ export function validateReviewResponse(value: unknown): ReviewResponse {
   }
 
   const openQuestions = value.open_questions === undefined ? [] : ensureStringArray(value.open_questions, "open_questions");
+  let metadata: ReviewResponse["metadata"];
+
+  if (value.metadata !== undefined) {
+    if (!isObject(value.metadata)) {
+      throw new Error("metadata must be an object");
+    }
+    if (!isString(value.metadata.model) || value.metadata.model.length === 0) {
+      throw new Error("metadata.model must be a non-empty string");
+    }
+    if (typeof value.metadata.duration_ms !== "number") {
+      throw new Error("metadata.duration_ms must be a number");
+    }
+
+    metadata = {
+      model: value.metadata.model,
+      duration_ms: value.metadata.duration_ms
+    };
+
+    if (value.metadata.response_id !== undefined) {
+      if (!isString(value.metadata.response_id)) {
+        throw new Error("metadata.response_id must be a string");
+      }
+      metadata.response_id = value.metadata.response_id;
+    }
+
+    if (value.metadata.usage !== undefined) {
+      if (!isObject(value.metadata.usage)) {
+        throw new Error("metadata.usage must be an object");
+      }
+
+      metadata.usage = {};
+      for (const key of ["input_tokens", "output_tokens", "total_tokens"] as const) {
+        const tokenValue = value.metadata.usage[key];
+        if (tokenValue !== undefined) {
+          if (typeof tokenValue !== "number") {
+            throw new Error(`metadata.usage.${key} must be a number`);
+          }
+          metadata.usage[key] = tokenValue;
+        }
+      }
+    }
+  }
 
   return {
     summary: value.summary,
     findings: value.findings.map(validateFinding),
     open_questions: openQuestions,
-    change_summary: value.change_summary
+    change_summary: value.change_summary,
+    metadata
   };
 }
 
@@ -261,6 +304,25 @@ export const reviewResponseJsonSchema = {
       type: "array",
       items: { type: "string" }
     },
-    change_summary: { type: "string" }
+    change_summary: { type: "string" },
+    metadata: {
+      type: "object",
+      additionalProperties: false,
+      required: ["model", "duration_ms"],
+      properties: {
+        model: { type: "string" },
+        duration_ms: { type: "number" },
+        response_id: { type: "string" },
+        usage: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            input_tokens: { type: "number" },
+            output_tokens: { type: "number" },
+            total_tokens: { type: "number" }
+          }
+        }
+      }
+    }
   }
 } as const;

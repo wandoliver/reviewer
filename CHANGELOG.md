@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is loosely based on Keep a Changelog.
 
+## [0.3.0] - 2026-04-25
+
+### Added
+
+- response metadata in review responses:
+  - model
+  - duration in milliseconds
+  - upstream response id when available
+  - token usage when available
+
+### Changed
+
+- quiet test logging by making request logging suppressible in test/injected app usage while keeping runtime logging enabled by default
+
+## [0.2.0] - 2026-04-24
+
+### Added
+
+- dedicated `POST /review/file` endpoint for single-file review payloads
+- dedicated `POST /review/diff` endpoint for direct diff review payloads
+- explicit request validation and test coverage for the dedicated endpoints
+
 ## [0.1.0] - 2026-04-24
 
 Initial public release.

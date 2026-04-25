@@ -43,6 +43,18 @@ export interface ReviewResponse {
   findings: ReviewFinding[];
   open_questions: string[];
   change_summary: string;
+  metadata?: ReviewMetadata;
+}
+
+export interface ReviewMetadata {
+  model: string;
+  duration_ms: number;
+  response_id?: string;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+  };
 }
 
 export interface ReviewLogEvent {

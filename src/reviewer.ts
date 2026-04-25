@@ -1,10 +1,13 @@
 import { env, requireOpenAiApiKey } from "./config.js";
+import { buildResponseMetadata, type OpenAiUsagePayload } from "./metadata.js";
 import { buildReviewInput, buildSystemPrompt } from "./prompt.js";
 import { UpstreamApiError } from "./errors.js";
 import { reviewResponseJsonSchema, validateReviewRequest, validateReviewResponse } from "./validation.js";
 import type { ReviewRequest, ReviewResponse } from "./types.js";
 
 interface OpenAIResponsesApiResult {
+  id?: string;
+  usage?: OpenAiUsagePayload;
   output_text?: string;
   output?: Array<{
     content?: Array<{
@@ -32,6 +35,7 @@ function extractOutputText(payload: OpenAIResponsesApiResult): string {
 
 export async function review(input: ReviewRequest): Promise<ReviewResponse> {
   const request = validateReviewRequest(input);
+  const startedAt = Date.now();
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -93,6 +97,13 @@ export async function review(input: ReviewRequest): Promise<ReviewResponse> {
   const payload = (await response.json()) as OpenAIResponsesApiResult;
   const text = extractOutputText(payload);
   const parsed = JSON.parse(text) as unknown;
+  const result = validateReviewResponse(parsed);
 
-  return validateReviewResponse(parsed);
+  result.metadata = buildResponseMetadata({
+    startedAt,
+    responseId: payload.id,
+    usage: payload.usage
+  });
+
+  return result;
 }

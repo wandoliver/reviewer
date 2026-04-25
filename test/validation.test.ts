@@ -68,11 +68,22 @@ test("validateReviewResponse accepts valid structured review", () => {
       }
     ],
     open_questions: ["Is this intentional?"],
-    change_summary: "Mostly okay"
+    change_summary: "Mostly okay",
+    metadata: {
+      model: "gpt-5",
+      duration_ms: 123,
+      response_id: "resp_123",
+      usage: {
+        input_tokens: 10,
+        output_tokens: 20,
+        total_tokens: 30
+      }
+    }
   });
 
   assert.equal(result.findings.length, 1);
   assert.equal(result.findings[0]?.severity, "high");
+  assert.equal(result.metadata?.model, "gpt-5");
 });
 
 test("reviewResponseJsonSchema exposes required top-level keys", () => {

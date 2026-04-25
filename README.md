@@ -1,19 +1,20 @@
 # Reviewer
 
-[![Release](https://img.shields.io/badge/release-v0.1.0-blue.svg)](https://github.com/wandoliver/reviewer/releases)
+[![Release](https://img.shields.io/badge/release-v0.3.0-blue.svg)](https://github.com/wandoliver/reviewer/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/wandoliver/reviewer/blob/main/LICENSE)
 
 Standalone review agent backed by the OpenAI API.
 
 ## Status
 
-Usable early version.
+Usable early version with dedicated file/diff endpoints and response metadata.
 
 Current scope:
 
 - local HTTP review endpoint
 - CLI for file and git-diff review
 - structured JSON review output
+- response metadata (`model`, `duration_ms`, upstream response id and token usage when available)
 - lightweight tests
 - prompt-evaluation fixtures
 
@@ -66,7 +67,7 @@ HTTP surfaces:
 - Node built-in HTTP server
 - Node built-in `fetch`
 - OpenAI Responses API
-- TypeScript only
+- minimal dependency footprint
 
 ## Setup
 
@@ -197,7 +198,17 @@ curl -X POST http://localhost:3333/review/diff \
     }
   ],
   "open_questions": [],
-  "change_summary": "The plan is close but still misses one branch."
+  "change_summary": "The plan is close but still misses one branch.",
+  "metadata": {
+    "model": "gpt-5",
+    "duration_ms": 412,
+    "response_id": "resp_123",
+    "usage": {
+      "input_tokens": 120,
+      "output_tokens": 340,
+      "total_tokens": 460
+    }
+  }
 }
 ```
 
@@ -260,7 +271,6 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- enrich response metadata with timing/model usage
 - improve prompt evaluation with more fixtures
 - optional markdown rendering mode
 - optional Docker packaging

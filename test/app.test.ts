@@ -9,14 +9,18 @@ function okResponse(): ReviewResponse {
     summary: "ok",
     findings: [],
     open_questions: [],
-    change_summary: "ok"
+    change_summary: "ok",
+    metadata: {
+      model: "gpt-5",
+      duration_ms: 1
+    }
   };
 }
 
 test("health endpoint is public", async () => {
   const response = await handleRequest(
     { method: "GET", url: "/health", headers: {} },
-    { reviewerApiToken: "secret" }
+    { reviewerApiToken: "secret", loggingEnabled: false }
   );
 
   assert.equal(response.statusCode, 200);
@@ -37,7 +41,8 @@ test("review endpoint accepts bearer token", async () => {
     })
   }, {
     reviewerApiToken: "secret",
-    reviewFn: async (_request: ReviewRequest) => okResponse()
+    reviewFn: async (_request: ReviewRequest) => okResponse(),
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 200);
@@ -57,7 +62,8 @@ test("review endpoint accepts X-API-Token", async () => {
     })
   }, {
     reviewerApiToken: "secret",
-    reviewFn: async (_request: ReviewRequest) => okResponse()
+    reviewFn: async (_request: ReviewRequest) => okResponse(),
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 200);
@@ -76,7 +82,8 @@ test("review endpoint rejects unauthorized requests", async () => {
     })
   }, {
     reviewerApiToken: "secret",
-    reviewFn: async (_request: ReviewRequest) => okResponse()
+    reviewFn: async (_request: ReviewRequest) => okResponse(),
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 401);
@@ -97,7 +104,8 @@ test("review endpoint maps validation errors to 400", async () => {
     reviewFn: async () => {
       throw new Error("should not be called");
     },
-    reviewerApiToken: undefined
+    reviewerApiToken: undefined,
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 400);
@@ -118,7 +126,8 @@ test("review endpoint maps insufficient quota to 503", async () => {
     reviewerApiToken: undefined,
     reviewFn: async () => {
       throw new UpstreamApiError("Quota exceeded", 429, "insufficient_quota", "insufficient_quota");
-    }
+    },
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 503);
@@ -143,7 +152,8 @@ test("review endpoint maps request validation errors thrown by reviewer to 400",
     reviewerApiToken: undefined,
     reviewFn: async () => {
       throw new RequestValidationError("bad request");
-    }
+    },
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 400);
@@ -167,7 +177,8 @@ test("file review endpoint maps dedicated request shape to a file review", async
     reviewFn: async (request) => {
       received = request;
       return okResponse();
-    }
+    },
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 200);
@@ -192,7 +203,8 @@ test("diff review endpoint maps dedicated request shape to a diff review", async
     reviewFn: async (request) => {
       received = request;
       return okResponse();
-    }
+    },
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 200);
@@ -212,7 +224,8 @@ test("file review endpoint validates required path and content", async () => {
     })
   }, {
     reviewerApiToken: undefined,
-    reviewFn: async () => okResponse()
+    reviewFn: async () => okResponse(),
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 400);
@@ -228,7 +241,8 @@ test("diff review endpoint validates required diff", async () => {
     body: JSON.stringify({})
   }, {
     reviewerApiToken: undefined,
-    reviewFn: async () => okResponse()
+    reviewFn: async () => okResponse(),
+    loggingEnabled: false
   });
 
   assert.equal(response.statusCode, 400);

@@ -3,7 +3,7 @@ import { review } from "./reviewer.js";
 import { env } from "./config.js";
 import { validateDiffReviewRequest, validateFileReviewRequest, validateReviewRequest } from "./validation.js";
 import { RequestValidationError, UpstreamApiError } from "./errors.js";
-import { logEvent } from "./logging.js";
+import { logEvent, setLoggingEnabled } from "./logging.js";
 import type { ReviewRequest, ReviewResponse } from "./types.js";
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
@@ -26,6 +26,7 @@ function sendJson(reply: ServerResponse, statusCode: number, body: unknown): voi
 export interface AppDependencies {
   reviewFn?: (request: ReviewRequest) => Promise<ReviewResponse>;
   reviewerApiToken?: string;
+  loggingEnabled?: boolean;
 }
 
 export interface RequestLike {
@@ -65,6 +66,7 @@ export async function handleRequest(request: RequestLike, deps: AppDependencies 
   const url = request.url ?? "/";
   const reviewFn = deps.reviewFn ?? review;
   const reviewerApiToken = deps.reviewerApiToken ?? env.REVIEWER_API_TOKEN;
+  setLoggingEnabled(deps.loggingEnabled ?? true);
   let mode: string | undefined;
 
   if (method === "GET" && url === "/health") {

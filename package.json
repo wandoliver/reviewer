@@ -1,7 +1,7 @@
 {
   "name": "reviewer",
-  "version": "0.1.0",
-  "author": "Oliver Wand <oliwand@gmail.com>",
+  "version": "0.3.0",
+  "author": "Oliver Wand <oliwand+gh@gmail.com>",
   "private": false,
   "type": "module",
   "description": "Standalone TypeScript review agent backed by the OpenAI API.",
