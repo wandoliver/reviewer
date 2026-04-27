@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is loosely based on Keep a Changelog.
 
+## [0.3.1] - 2026-04-27
+
+### Fixed
+
+- removed locally-generated `metadata` from the model-facing strict JSON schema so OpenAI accepts review requests again
+- added coverage to keep `metadata` out of the response schema while still allowing it in the final local response payload
+
 ## [0.3.0] - 2026-04-25
 
 ### Added

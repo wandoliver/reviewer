@@ -93,4 +93,5 @@ test("reviewResponseJsonSchema exposes required top-level keys", () => {
     "open_questions",
     "change_summary"
   ]);
+  assert.equal("metadata" in reviewResponseJsonSchema.properties, false);
 });

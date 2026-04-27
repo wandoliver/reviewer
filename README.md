@@ -1,6 +1,6 @@
 # Reviewer
 
-[![Release](https://img.shields.io/badge/release-v0.3.0-blue.svg)](https://github.com/wandoliver/reviewer/releases)
+[![Release](https://img.shields.io/badge/release-v0.3.1-blue.svg)](https://github.com/wandoliver/reviewer/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/wandoliver/reviewer/blob/main/LICENSE)
 
 Standalone review agent backed by the OpenAI API.

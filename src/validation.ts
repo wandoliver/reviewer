@@ -304,25 +304,6 @@ export const reviewResponseJsonSchema = {
       type: "array",
       items: { type: "string" }
     },
-    change_summary: { type: "string" },
-    metadata: {
-      type: "object",
-      additionalProperties: false,
-      required: ["model", "duration_ms"],
-      properties: {
-        model: { type: "string" },
-        duration_ms: { type: "number" },
-        response_id: { type: "string" },
-        usage: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            input_tokens: { type: "number" },
-            output_tokens: { type: "number" },
-            total_tokens: { type: "number" }
-          }
-        }
-      }
-    }
+    change_summary: { type: "string" }
   }
 } as const;
